@@ -4,6 +4,8 @@ import { useAuth } from './context/AuthContext.jsx';
 import { AccountPage } from './pages/AccountPage.jsx';
 import { LoginPage } from './pages/LoginPage.jsx';
 import { RegisterPage } from './pages/RegisterPage.jsx';
+import { RestaurantListPage } from './pages/RestaurantListPage.jsx';
+import { RestaurantMenuPage } from './pages/RestaurantMenuPage.jsx';
 import { ProtectedRoute } from './routes/ProtectedRoute.jsx';
 import './styles.css';
 
@@ -14,6 +16,7 @@ function SiteHeader() {
     <header className="site-header">
       <Link className="wordmark" to="/">Campus<span>Bite</span><b aria-hidden="true">.</b></Link>
       <div className="header-actions">
+        <Link className="text-button" to="/restaurants">Browse restaurants</Link>
         {user ? (
           <>
             <span className="status-pill"><i aria-hidden="true" />{user.role.replaceAll('_', ' ')}</span>
@@ -36,9 +39,10 @@ function Home() {
       <div className="brand-mark" aria-hidden="true">CB</div>
       <p className="eyebrow">CampusBite · Capstone project</p>
       <h1>Good food, closer to campus.</h1>
-      <p className="intro">Sign in to continue to your CampusBite account, or create a customer account to get started.</p>
+      <p className="intro">Explore campus restaurants and browse their menus. Sign in when you’re ready to order.</p>
       <div className="home-actions">
-        <Link className="api-link" to="/login">Sign in <span aria-hidden="true">→</span></Link>
+        <Link className="api-link" to="/restaurants">Browse restaurants <span aria-hidden="true">→</span></Link>
+        <Link className="text-button" to="/login">Sign in</Link>
         <Link className="secondary-link" to="/register">Create a customer account</Link>
       </div>
     </main>
@@ -72,6 +76,8 @@ export default function App() {
           element={isLoading ? <LoadingPage /> : isAuthenticated ? <Navigate to={roleHomePath(user.role)} replace /> : <Home />}
         />
         <Route path="/api-status" element={<ApiStatus />} />
+        <Route path="/restaurants" element={<RestaurantListPage />} />
+        <Route path="/restaurants/:restaurantId" element={<RestaurantMenuPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/account/customer" element={<ProtectedRoute allowedRoles={["CUSTOMER"]}><AccountPage /></ProtectedRoute>} />
