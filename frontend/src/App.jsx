@@ -1,5 +1,34 @@
-import { Link, Route, Routes } from 'react-router-dom';
+import { Link, Navigate, Route, Routes } from 'react-router-dom';
+import { roleHomePath } from './auth/roles.js';
+import { useAuth } from './context/AuthContext.jsx';
+import { AccountPage } from './pages/AccountPage.jsx';
+import { LoginPage } from './pages/LoginPage.jsx';
+import { RegisterPage } from './pages/RegisterPage.jsx';
+import { ProtectedRoute } from './routes/ProtectedRoute.jsx';
 import './styles.css';
+
+function SiteHeader() {
+  const { user, logout } = useAuth();
+
+  return (
+    <header className="site-header">
+      <Link className="wordmark" to="/">Campus<span>Bite</span><b aria-hidden="true">.</b></Link>
+      <div className="header-actions">
+        {user ? (
+          <>
+            <span className="status-pill"><i aria-hidden="true" />{user.role.replaceAll('_', ' ')}</span>
+            <button className="text-button" type="button" onClick={logout}>Sign out</button>
+          </>
+        ) : (
+          <>
+            <Link className="text-button" to="/login">Sign in</Link>
+            <Link className="small-button" to="/register">Create account</Link>
+          </>
+        )}
+      </div>
+    </header>
+  );
+}
 
 function Home() {
   return (
@@ -7,11 +36,11 @@ function Home() {
       <div className="brand-mark" aria-hidden="true">CB</div>
       <p className="eyebrow">CampusBite · Capstone project</p>
       <h1>Good food, closer to campus.</h1>
-      <p className="intro">
-        The project foundation is ready. Restaurant ordering and role-based
-        experiences will be added in the next milestones.
-      </p>
-      <Link className="api-link" to="/api-status">View API status <span aria-hidden="true">→</span></Link>
+      <p className="intro">Sign in to continue to your CampusBite account, or create a customer account to get started.</p>
+      <div className="home-actions">
+        <Link className="api-link" to="/login">Sign in <span aria-hidden="true">→</span></Link>
+        <Link className="secondary-link" to="/register">Create a customer account</Link>
+      </div>
     </main>
   );
 }
@@ -27,16 +56,28 @@ function ApiStatus() {
   );
 }
 
+function LoadingPage() {
+  return <main className="auth-card" role="status">Checking your session…</main>;
+}
+
 export default function App() {
+  const { isAuthenticated, isLoading, user } = useAuth();
+
   return (
     <div className="page-shell">
-      <header className="site-header">
-        <Link className="wordmark" to="/">Campus<span>Bite</span><b aria-hidden="true">.</b></Link>
-        <span className="status-pill"><i aria-hidden="true" /> Foundation</span>
-      </header>
+      <SiteHeader />
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route
+          path="/"
+          element={isLoading ? <LoadingPage /> : isAuthenticated ? <Navigate to={roleHomePath(user.role)} replace /> : <Home />}
+        />
         <Route path="/api-status" element={<ApiStatus />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/account/customer" element={<ProtectedRoute allowedRoles={["CUSTOMER"]}><AccountPage /></ProtectedRoute>} />
+        <Route path="/account/owner" element={<ProtectedRoute allowedRoles={["OWNER"]}><AccountPage /></ProtectedRoute>} />
+        <Route path="/account/delivery-partner" element={<ProtectedRoute allowedRoles={["DELIVERY_PARTNER"]}><AccountPage /></ProtectedRoute>} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <footer>Built for the campus community <span aria-hidden="true">✳</span></footer>
     </div>
