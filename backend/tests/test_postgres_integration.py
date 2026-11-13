@@ -23,7 +23,7 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.security import JWT_ALGORITHM, hash_password
 from app.database import get_db
-from app.models import MenuItem, Restaurant, User
+from app.models import MenuItem, Order, PaymentLedgerEntry, Restaurant, User
 from tests.conftest import TEST_JWT_SECRET, TEST_PASSWORD, auth_test_app
 
 
@@ -369,4 +369,95 @@ def test_postgres_restaurant_and_menu_api_filters_availability(postgres_client, 
     _require(
         len(_response_json(owner_response)["items"]) == 2,
         "PostgreSQL owner menu did not include all availability states.",
+    )
+
+
+def test_postgres_order_checkout_owner_assignment_and_delivery_lifecycle(
+    postgres_client, postgres_session, postgres_role_users, postgres_test_run_id
+):
+    owner = postgres_role_users["OWNER"]
+    customer = postgres_role_users["CUSTOMER"]
+    partner = postgres_role_users["DELIVERY_PARTNER"]
+    restaurant = Restaurant(
+        owner_id=owner.id,
+        name=f"Stage 3B {postgres_test_run_id[:12]}",
+        description="Order lifecycle integration fixture",
+        address="Test campus address",
+    )
+    postgres_session.add(restaurant)
+    postgres_session.flush()
+    menu_item = MenuItem(
+        restaurant_id=restaurant.id,
+        name="Lifecycle Integration Dish",
+        description="PostgreSQL lifecycle fixture",
+        category="Mains",
+        price=Decimal("125.50"),
+        is_available=True,
+    )
+    postgres_session.add(menu_item)
+    postgres_session.flush()
+
+    _, customer_token = _login(postgres_client, customer.email)
+    checkout = postgres_client.post(
+        "/orders",
+        headers={"Authorization": f"Bearer {customer_token}"},
+        json={
+            "items": [{"menu_item_id": menu_item.id, "quantity": 2, "expected_unit_price": "125.50"}],
+            "delivery_address": "123 Integration Road, Campus",
+        },
+    )
+    _require(checkout.status_code == 201, "PostgreSQL-backed order checkout failed.")
+    order_payload = _response_json(checkout)
+    _require(order_payload.get("total_amount") == "251.00", "Checkout did not use the PostgreSQL menu price.")
+    order_id = order_payload.get("id")
+    _require(isinstance(order_id, int), "Checkout did not return an order identifier.")
+
+    _, owner_token = _login(postgres_client, owner.email)
+    owner_headers = {"Authorization": f"Bearer {owner_token}"}
+    accept = postgres_client.post(f"/owner/orders/{order_id}/accept", headers=owner_headers)
+    prepare = postgres_client.patch(
+        f"/owner/orders/{order_id}/status", headers=owner_headers, json={"status": "PREPARING"}
+    )
+    ready = postgres_client.patch(
+        f"/owner/orders/{order_id}/status", headers=owner_headers, json={"status": "READY"}
+    )
+    _require(accept.status_code == 200 and accept.json().get("status") == "ACCEPTED", "Owner could not accept the order.")
+    _require(prepare.status_code == 200 and prepare.json().get("status") == "PREPARING", "Owner preparation transition failed.")
+    _require(ready.status_code == 200 and ready.json().get("status") == "READY", "Owner could not mark the order READY.")
+
+    assignment = postgres_client.post(
+        f"/owner/orders/{order_id}/assign-delivery",
+        headers=owner_headers,
+        json={"delivery_partner_id": partner.id},
+    )
+    _require(assignment.status_code == 200 and assignment.json().get("status") == "ASSIGNED", "Owner delivery assignment failed.")
+
+    _, partner_token = _login(postgres_client, partner.email)
+    partner_headers = {"Authorization": f"Bearer {partner_token}"}
+    out_for_delivery = postgres_client.patch(
+        f"/delivery/orders/{order_id}/status",
+        headers=partner_headers,
+        json={"status": "OUT_FOR_DELIVERY"},
+    )
+    delivered = postgres_client.patch(
+        f"/delivery/orders/{order_id}/status",
+        headers=partner_headers,
+        json={"status": "DELIVERED"},
+    )
+    _require(
+        out_for_delivery.status_code == 200 and out_for_delivery.json().get("status") == "OUT_FOR_DELIVERY",
+        "Delivery partner could not start delivery.",
+    )
+    _require(delivered.status_code == 200 and delivered.json().get("status") == "DELIVERED", "Delivery partner could not complete delivery.")
+    _require(delivered.json().get("delivered_at") is not None, "Delivery completion did not set delivered_at.")
+
+    order = postgres_session.get(Order, order_id)
+    _require(order is not None and order.status == "DELIVERED", "Final PostgreSQL order state was not persisted.")
+    entries = postgres_session.query(PaymentLedgerEntry).filter_by(order_id=order_id).all()
+    _require(
+        len(entries) == 1
+        and entries[0].entry_type == "PAYMENT"
+        and entries[0].status == "MOCK_PAID"
+        and entries[0].amount == Decimal("251.00"),
+        "PostgreSQL checkout did not create the expected mock payment ledger entry.",
     )
