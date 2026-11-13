@@ -12,12 +12,16 @@ from app.dependencies.auth import require_roles
 from app.models import User
 from app.core.security import hash_password
 from app.routers.auth import router as auth_router
+from app.routers.owner_menu import router as owner_menu_router
+from app.routers.restaurants import router as restaurants_router
 from app.schemas.auth import UserPublic
 
 TEST_JWT_SECRET = "test-only-secret-with-at-least-32-bytes"
 TEST_PASSWORD = "correct-horse-battery"
 auth_test_app = FastAPI()
 auth_test_app.include_router(auth_router)
+auth_test_app.include_router(restaurants_router)
+auth_test_app.include_router(owner_menu_router)
 
 
 def _role_test_endpoint(role):

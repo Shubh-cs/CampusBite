@@ -29,6 +29,24 @@ The foundation includes the React app shell, FastAPI health endpoint, relational
 
 **Verification (14 November 2026):** PostgreSQL revisions `0001` and `0002` applied; an existing CUSTOMER sentinel survived revision `0002`; PostgreSQL rejected an unsupported `ADMIN` role; PostgreSQL integration tests passed (14); the full backend suite passed (53). Browser checks passed for customer registration/login, refresh persistence, logout, protected-route redirect, OWNER and DELIVERY_PARTNER login, and wrong-role redirect. `/auth/me` returned HTTP 200 on refresh; no red browser-console errors were reported.
 
+## Milestone 3A: Restaurant and menu backend
+
+- Public `GET /restaurants` returns a paginated list. `GET /restaurants/{restaurant_id}/menu-items` returns available menu items by default and supports case-insensitive partial name search plus inclusive `min_price` and `max_price` filters.
+- OWNER-only `GET` and `PATCH /owner/restaurant` resolve the restaurant from the authenticated owner account. Owners can view, add and update menu items through `GET /owner/menu-items`, `POST /owner/menu-items`, and `PATCH /owner/menu-items/{menu_item_id}`. Owner menu responses include available and unavailable dishes. There is no hard-delete endpoint; availability can be changed with `is_available`.
+- All list endpoints use `page` and `page_size` pagination (default page size 10, maximum 100). Protected routes validate the current account and role in the backend.
+- The explicit demo seed command is `python -m app.seed_demo` from `backend`. It creates three fictional sample restaurants with five dishes each, three owner accounts and two delivery-partner accounts. It does not run on application startup. Exact existing seed data is left unchanged on reruns; conflicting or edited seed records cause the operation to stop without committing changes.
+- Demo accounts are for local development only. All five accounts use the password `CampusBite-Local-Demo-2026!`:
+
+  | Role | Demo email |
+  | --- | --- |
+  | OWNER | `owner1@campusbite.local` |
+  | OWNER | `owner2@campusbite.local` |
+  | OWNER | `owner3@campusbite.local` |
+  | DELIVERY_PARTNER | `delivery1@campusbite.local` |
+  | DELIVERY_PARTNER | `delivery2@campusbite.local` |
+
+  These fictional credentials must not be reused outside a local demo.
+
 ## Run locally
 
 1. Copy `.env.example` to `.env`. Set `JWT_SECRET_KEY` to a private random value of at least 32 bytes, and keep `.env` out of source control. Set `FRONTEND_ORIGIN` to the exact origin used by the browser, normally `http://localhost:5173`.
@@ -94,4 +112,4 @@ To verify the frontend production bundle, run `npm run build` from `frontend` af
 
 `.env.example` lists database, JWT, optional OpenAI, and frontend-origin settings. It contains placeholders; keep actual secrets in the ignored `.env` file.
 
-Authentication and authorization are implemented. Restaurant discovery and ordering, restaurant and delivery workflows, dashboards, seeded demo accounts, refunds, AI insights, and reminders remain future milestones. They are not implemented by the authentication landing pages.
+Authentication and authorization plus the Milestone 3A restaurant and menu backend are implemented. Ordering and delivery workflows, dashboards, refunds, AI insights, and reminders remain future milestones. The authentication landing pages are not role dashboards.

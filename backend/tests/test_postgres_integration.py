@@ -1,4 +1,4 @@
-"""Opt-in authentication integration checks against an isolated PostgreSQL DB.
+"""Opt-in backend integration checks against an isolated PostgreSQL DB.
 
 Set TEST_DATABASE_URL explicitly to the disposable Stage 2D database on
 127.0.0.1:55432. This module never reads DATABASE_URL or loads settings from
@@ -6,8 +6,10 @@ Set TEST_DATABASE_URL explicitly to the disposable Stage 2D database on
 """
 
 from datetime import datetime, timedelta, timezone
+from decimal import Decimal
 import os
 from typing import Any
+from uuid import uuid4
 
 import jwt
 import pytest
@@ -21,7 +23,7 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.security import JWT_ALGORITHM, hash_password
 from app.database import get_db
-from app.models import User
+from app.models import MenuItem, Restaurant, User
 from tests.conftest import TEST_JWT_SECRET, TEST_PASSWORD, auth_test_app
 
 
@@ -44,6 +46,17 @@ def _require(condition: bool, message: str) -> None:
     """Fail with a fixed message so response credentials are never shown."""
     if not condition:
         pytest.fail(message, pytrace=False)
+
+
+@pytest.fixture(scope="session")
+def postgres_test_run_id() -> str:
+    run_id = uuid4().hex
+    print(f"PostgreSQL integration test run id: {run_id}")
+    return run_id
+
+
+def _test_email(run_id: str, label: str) -> str:
+    return f"stage2d-{run_id}-{label}@example.test"
 
 
 @pytest.fixture
@@ -134,12 +147,12 @@ def postgres_client(postgres_session, monkeypatch):
 
 
 @pytest.fixture
-def postgres_role_users(postgres_session):
+def postgres_role_users(postgres_session, postgres_test_run_id):
     users = {}
     for role in ("CUSTOMER", "OWNER", "DELIVERY_PARTNER"):
         user = User(
             full_name=f"Stage 2D {role.title()}",
-            email=f"stage2d-{role.lower()}@example.test",
+            email=_test_email(postgres_test_run_id, role.lower()),
             password_hash=hash_password(TEST_PASSWORD),
             role=role,
         )
@@ -169,12 +182,15 @@ def _login(client: TestClient, email: str) -> tuple[dict[str, Any], str]:
 
 
 @pytest.mark.usefixtures("postgres_role_users")
-def test_postgres_registration_login_and_me_do_not_expose_password_hash(postgres_client):
+def test_postgres_registration_login_and_me_do_not_expose_password_hash(
+    postgres_client, postgres_test_run_id
+):
+    registration_email = _test_email(postgres_test_run_id, "registration")
     registration = postgres_client.post(
         "/auth/register",
         json={
             "full_name": "Postgres Integration Customer",
-            "email": "stage2d-registration@example.test",
+            "email": registration_email,
             "password": TEST_PASSWORD,
         },
     )
@@ -187,7 +203,7 @@ def test_postgres_registration_login_and_me_do_not_expose_password_hash(postgres
         "Registration exposed a password field.",
     )
 
-    login_payload, token = _login(postgres_client, "stage2d-registration@example.test")
+    login_payload, token = _login(postgres_client, registration_email)
     _require(login_payload.get("user", {}).get("role") == "CUSTOMER", "Customer login returned the wrong role.")
 
     me_response = postgres_client.get("/auth/me", headers={"Authorization": f"Bearer {token}"})
@@ -200,12 +216,14 @@ def test_postgres_registration_login_and_me_do_not_expose_password_hash(postgres
     )
 
 
-def test_postgres_registration_rejects_client_selected_privileged_role(postgres_client):
+def test_postgres_registration_rejects_client_selected_privileged_role(
+    postgres_client, postgres_test_run_id
+):
     response = postgres_client.post(
         "/auth/register",
         json={
             "full_name": "Stage 2D Role Escalation Attempt",
-            "email": "stage2d-role-escalation@example.test",
+            "email": _test_email(postgres_test_run_id, "role-escalation"),
             "password": TEST_PASSWORD,
             "role": "OWNER",
         },
@@ -290,11 +308,11 @@ def test_postgres_authorization_uses_current_database_role(postgres_client, post
     _require(customer_route.status_code == 403, "Authorization trusted a stale role after a database role change.")
 
 
-def test_postgres_role_check_rejects_unsupported_role(postgres_session):
+def test_postgres_role_check_rejects_unsupported_role(postgres_session, postgres_test_run_id):
     postgres_session.add(
         User(
             full_name="Unsupported Role Fixture",
-            email="stage2d-invalid-role@example.test",
+            email=_test_email(postgres_test_run_id, "invalid-role"),
             password_hash="non-credential-test-value",
             role="ADMIN",
         )
@@ -302,3 +320,53 @@ def test_postgres_role_check_rejects_unsupported_role(postgres_session):
     with pytest.raises(IntegrityError):
         postgres_session.flush()
     postgres_session.rollback()
+
+
+def test_postgres_restaurant_and_menu_api_filters_availability(postgres_client, postgres_session, postgres_role_users):
+    owner = postgres_role_users["OWNER"]
+    restaurant = Restaurant(
+        owner_id=owner.id,
+        name="PostgreSQL Menu Fixture",
+        description="Fixture",
+        address="Test address",
+    )
+    postgres_session.add(restaurant)
+    postgres_session.flush()
+    postgres_session.add_all(
+        [
+            MenuItem(
+                restaurant_id=restaurant.id,
+                name="Available PostgreSQL Dish",
+                description="Available fixture item",
+                category="Mains",
+                price=Decimal("125.00"),
+                is_available=True,
+            ),
+            MenuItem(
+                restaurant_id=restaurant.id,
+                name="Unavailable PostgreSQL Dish",
+                description="Unavailable fixture item",
+                category="Mains",
+                price=Decimal("150.00"),
+                is_available=False,
+            ),
+        ]
+    )
+    postgres_session.flush()
+    _, token = _login(postgres_client, owner.email)
+
+    public_response = postgres_client.get(f"/restaurants/{restaurant.id}/menu-items")
+    owner_response = postgres_client.get(
+        "/owner/menu-items", headers={"Authorization": f"Bearer {token}"}
+    )
+    _require(public_response.status_code == 200, "PostgreSQL public menu request failed.")
+    _require(owner_response.status_code == 200, "PostgreSQL owner menu request failed.")
+    _require(
+        [item["name"] for item in _response_json(public_response)["items"]]
+        == ["Available PostgreSQL Dish"],
+        "PostgreSQL public menu included an unavailable dish.",
+    )
+    _require(
+        len(_response_json(owner_response)["items"]) == 2,
+        "PostgreSQL owner menu did not include all availability states.",
+    )
