@@ -30,6 +30,7 @@ export function OrderConfirmationPage() {
         <p className="auth-intro">Your order <strong>#{order.id}</strong> has been placed with status {order.status.replaceAll('_', ' ').toLowerCase()}.</p>
         <p className="cart-subtotal">{formatINR(Math.round(Number(order.total_amount) * 100))}</p>
         <p className="cart-summary-note">Payment status: {order.payment_status}</p>
+        <Link className="form-submit cart-browse-link" to={`/orders/${order.id}`}>View order details</Link>
       </>}
       <Link className="form-submit cart-browse-link" to="/restaurants">Browse restaurants</Link>
     </main>
