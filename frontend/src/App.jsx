@@ -9,6 +9,10 @@ import { CheckoutPage } from './pages/CheckoutPage.jsx';
 import { OrderConfirmationPage } from './pages/OrderConfirmationPage.jsx';
 import { CustomerOrdersPage } from './pages/CustomerOrdersPage.jsx';
 import { CustomerOrderDetailPage } from './pages/CustomerOrderDetailPage.jsx';
+import { OwnerDashboardPage } from './pages/OwnerDashboardPage.jsx';
+import { OwnerOrderDetailPage } from './pages/OwnerOrderDetailPage.jsx';
+import { DeliveryOrdersPage } from './pages/DeliveryOrdersPage.jsx';
+import { DeliveryOrderDetailPage } from './pages/DeliveryOrderDetailPage.jsx';
 import { RestaurantListPage } from './pages/RestaurantListPage.jsx';
 import { RestaurantMenuPage } from './pages/RestaurantMenuPage.jsx';
 import { ProtectedRoute } from './routes/ProtectedRoute.jsx';
@@ -30,6 +34,8 @@ function SiteHeader() {
         {user ? (
           <>
             {user.role === 'CUSTOMER' && <Link className="text-button" to="/orders">My orders</Link>}
+            {user.role === 'OWNER' && <Link className="text-button" to="/account/owner">Owner dashboard</Link>}
+            {user.role === 'DELIVERY_PARTNER' && <Link className="text-button" to="/account/delivery-partner">My deliveries</Link>}
             <span className="status-pill"><i aria-hidden="true" />{user.role.replaceAll('_', ' ')}</span>
             <button className="text-button" type="button" onClick={logout}>Sign out</button>
           </>
@@ -97,8 +103,10 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/account/customer" element={<ProtectedRoute allowedRoles={["CUSTOMER"]}><AccountPage /></ProtectedRoute>} />
-        <Route path="/account/owner" element={<ProtectedRoute allowedRoles={["OWNER"]}><AccountPage /></ProtectedRoute>} />
-        <Route path="/account/delivery-partner" element={<ProtectedRoute allowedRoles={["DELIVERY_PARTNER"]}><AccountPage /></ProtectedRoute>} />
+        <Route path="/account/owner" element={<ProtectedRoute allowedRoles={["OWNER"]}><OwnerDashboardPage /></ProtectedRoute>} />
+        <Route path="/owner/orders/:orderId" element={<ProtectedRoute allowedRoles={["OWNER"]}><OwnerOrderDetailPage /></ProtectedRoute>} />
+        <Route path="/account/delivery-partner" element={<ProtectedRoute allowedRoles={["DELIVERY_PARTNER"]}><DeliveryOrdersPage /></ProtectedRoute>} />
+        <Route path="/delivery/orders/:orderId" element={<ProtectedRoute allowedRoles={["DELIVERY_PARTNER"]}><DeliveryOrderDetailPage /></ProtectedRoute>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <footer>Built for the campus community <span aria-hidden="true">✳</span></footer>
