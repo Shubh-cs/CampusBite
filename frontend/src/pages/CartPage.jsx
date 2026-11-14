@@ -80,6 +80,7 @@ export function CartPage() {
             <p className="cart-subtotal">{formatINR(subtotalPaise)}</p>
             <p className="cart-summary-note">Shown using the saved item prices. Final prices are confirmed by the server during checkout.</p>
             <Link className="secondary-link" to="/restaurants">Continue browsing</Link>
+            <Link className="form-submit cart-checkout-link" to="/checkout">Continue to checkout</Link>
           </aside>
         </div>
       )}

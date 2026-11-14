@@ -147,6 +147,17 @@ footer span { margin-left: 5px; color: #e47743; }
 .cart-subtotal { margin: 12px 0 0; color: #1d4939; font: 800 26px 'Manrope', sans-serif; }
 .cart-summary-note { margin: 12px 0 0; color: #718477; font-size: 12px; line-height: 1.6; }
 .cart-summary .secondary-link { display: inline-flex; margin-top: 22px; font-size: 13px; }
+.cart-checkout-link { display: inline-flex; margin-top: 12px; justify-content: center; }
+.checkout-address { margin: 18px 0; }
+.checkout-address textarea { width: 100%; resize: vertical; border: 1px solid #d6ddd3; border-radius: 9px; padding: 11px 12px; color: #1d3028; background: #fff; font: inherit; }
+.checkout-submit { width: 100%; margin-top: 18px; }
+.checkout-page .cart-layout { align-items: start; }
+.price-confirmation { position: fixed; z-index: 30; left: 50%; top: 50%; width: min(500px, calc(100% - 32px)); transform: translate(-50%, -50%); border: 1px solid #e5e6dc; border-radius: 16px; padding: 24px; background: #fffefa; box-shadow: 0 25px 80px #101a1766; }
+.price-confirmation h2 { margin: 0; color: #1d3028; font: 800 24px/1.2 'Manrope', sans-serif; }
+.price-confirmation p, .price-confirmation li { color: #52665a; font-size: 14px; line-height: 1.55; }
+.price-confirmation ul { padding-left: 20px; }
+.price-confirmation .form-submit { width: 100%; }
+.order-confirmation { margin-top: 50px; }
 .dialog-backdrop { position: fixed; z-index: 20; inset: 0; display: grid; place-items: center; padding: 20px; background: #15221dcc; }
 .switch-dialog { width: min(460px, 100%); border: 1px solid #e5e6dc; border-radius: 17px; padding: 25px; background: #fffefa; box-shadow: 0 25px 80px #101a1766; }
 .switch-dialog h2 { margin: 0; font: 800 26px/1.2 'Manrope', sans-serif; letter-spacing: -1px; }

@@ -20,7 +20,8 @@ export function LoginPage() {
     try {
       const user = await login({ email: email.trim(), password });
       const requestedPath = location.state?.from?.pathname;
-      navigate(requestedPath === roleHomePath(user.role) ? requestedPath : roleHomePath(user.role), { replace: true });
+      const returnToCheckout = user.role === 'CUSTOMER' && requestedPath === '/checkout';
+      navigate(returnToCheckout ? requestedPath : requestedPath === roleHomePath(user.role) ? requestedPath : roleHomePath(user.role), { replace: true });
     } catch (requestError) {
       setError(requestError instanceof ApiError ? requestError.message : 'Sign-in failed. Please try again.');
     } finally {

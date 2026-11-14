@@ -5,6 +5,8 @@ import { AccountPage } from './pages/AccountPage.jsx';
 import { LoginPage } from './pages/LoginPage.jsx';
 import { RegisterPage } from './pages/RegisterPage.jsx';
 import { CartPage } from './pages/CartPage.jsx';
+import { CheckoutPage } from './pages/CheckoutPage.jsx';
+import { OrderConfirmationPage } from './pages/OrderConfirmationPage.jsx';
 import { RestaurantListPage } from './pages/RestaurantListPage.jsx';
 import { RestaurantMenuPage } from './pages/RestaurantMenuPage.jsx';
 import { ProtectedRoute } from './routes/ProtectedRoute.jsx';
@@ -85,6 +87,8 @@ export default function App() {
         <Route path="/restaurants" element={<RestaurantListPage />} />
         <Route path="/restaurants/:restaurantId" element={<RestaurantMenuPage />} />
         <Route path="/cart" element={<CartPage />} />
+        <Route path="/checkout" element={<ProtectedRoute allowedRoles={["CUSTOMER"]}><CheckoutPage /></ProtectedRoute>} />
+        <Route path="/order-confirmation/:orderId" element={<ProtectedRoute allowedRoles={["CUSTOMER"]}><OrderConfirmationPage /></ProtectedRoute>} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/account/customer" element={<ProtectedRoute allowedRoles={["CUSTOMER"]}><AccountPage /></ProtectedRoute>} />

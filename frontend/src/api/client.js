@@ -4,10 +4,11 @@ const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost
 const API_BASE_URL = configuredBaseUrl.replace(/\/$/, '');
 
 export class ApiError extends Error {
-  constructor(message, status = 0) {
+  constructor(message, status = 0, payload = null) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
+    this.payload = payload;
   }
 }
 
@@ -86,7 +87,7 @@ export async function apiFetch(path, options = {}) {
   }
 
   if (!response.ok) {
-    throw new ApiError(getErrorMessage(payload, response.status), response.status);
+    throw new ApiError(getErrorMessage(payload, response.status), response.status, payload);
   }
 
   return payload;

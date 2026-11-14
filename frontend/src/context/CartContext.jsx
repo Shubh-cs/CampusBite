@@ -245,6 +245,42 @@ export function CartProvider({ children }) {
     }));
   }, []);
 
+  const acceptPriceChanges = useCallback((priceChanges) => {
+    const changes = new Map(priceChanges.map((item) => [item.menu_item_id, String(item.current_unit_price)]));
+    setCart((currentCart) => ({
+      ...currentCart,
+      items: currentCart.items.map((item) => changes.has(item.menuItemId)
+        ? { ...item, unitPrice: changes.get(item.menuItemId), currentUnitPrice: null }
+        : item),
+    }));
+  }, []);
+
+  const markItemsUnavailable = useCallback((menuItemIds) => {
+    const unavailableIds = new Set(menuItemIds);
+    setCart((currentCart) => ({
+      ...currentCart,
+      items: currentCart.items.map((item) => unavailableIds.has(item.menuItemId)
+        ? { ...item, availability: 'unavailable' }
+        : item),
+    }));
+  }, []);
+
+  const setItemsPriceChanges = useCallback((priceChanges) => {
+    const changes = new Map(priceChanges.map((item) => [item.menu_item_id, String(item.current_unit_price)]));
+    setCart((currentCart) => ({
+      ...currentCart,
+      items: currentCart.items.map((item) => changes.has(item.menuItemId)
+        ? { ...item, currentUnitPrice: changes.get(item.menuItemId) }
+        : item),
+    }));
+  }, []);
+
+  const clearCart = useCallback(() => {
+    setIsRevalidating(false);
+    setRevalidationError('');
+    setCart(emptyCart());
+  }, []);
+
   const itemCount = cart.items.reduce((count, item) => count + item.quantity, 0);
   const subtotalPaise = cart.items.reduce((total, item) => total + itemSubtotalPaise(item), 0);
 
@@ -261,9 +297,14 @@ export function CartProvider({ children }) {
     decreaseQuantity,
     removeItem,
     acceptPriceChange,
+    acceptPriceChanges,
+    markItemsUnavailable,
+    setItemsPriceChanges,
+    clearCart,
   }), [
     cart, itemCount, subtotalPaise, isRevalidating, revalidationError, storageError,
     addItem, replaceCartWithItem, increaseQuantity, decreaseQuantity, removeItem, acceptPriceChange,
+    acceptPriceChanges, markItemsUnavailable, setItemsPriceChanges, clearCart,
   ]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
