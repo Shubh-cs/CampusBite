@@ -107,6 +107,52 @@ footer span { margin-left: 5px; color: #e47743; }
 .secondary-button { border: 1px solid #cfdbd0; border-radius: 8px; padding: 10px 13px; color: #276447; background: #fffefa; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
 .secondary-button:disabled { cursor: not-allowed; opacity: .5; }
 .pagination { display: flex; align-items: center; justify-content: center; gap: 18px; margin-top: 28px; color: #718477; font-size: 13px; }
+.cart-nav-link { display: inline-flex; align-items: center; gap: 7px; border-radius: 8px; padding: 8px 10px; color: #1d4939; font-size: 13px; font-weight: 700; }
+.cart-nav-link:hover { background: #edf1e8; }
+.cart-count { display: inline-grid; min-width: 21px; height: 21px; place-items: center; border-radius: 99px; padding: 0 5px; color: #fff; background: #e47743; font-size: 11px; }
+.add-to-cart-button { align-self: flex-start; margin-top: 10px; border: 1px solid #cfdbd0; border-radius: 8px; padding: 9px 12px; color: #276447; background: #f7faf4; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.add-to-cart-button:hover { border-color: #7b9a7f; background: #edf4e9; }
+.cart-toast { margin: 0 0 18px; border: 1px solid #cddfcb; border-radius: 10px; padding: 12px 15px; color: #276447; background: #f2f8ef; font-size: 14px; }
+.cart-title { margin-bottom: 28px; font-size: clamp(38px, 6vw, 60px); }
+.cart-status { margin-bottom: 18px; }
+.cart-empty { margin-top: 32px; padding: 36px; }
+.cart-empty h2 { margin: 0; color: #1d3028; font: 800 25px/1.2 'Manrope', sans-serif; letter-spacing: -1px; }
+.cart-empty p { margin: 0; }
+.cart-browse-link { margin-top: 5px; }
+.cart-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; align-items: start; gap: 22px; }
+.cart-items, .cart-summary { border: 1px solid #e5e6dc; border-radius: 16px; background: #fffefa; }
+.cart-items { padding: 22px; }
+.cart-restaurant-heading { display: flex; align-items: end; justify-content: space-between; gap: 16px; padding-bottom: 18px; }
+.cart-restaurant-heading h2 { margin: 0; font: 700 21px/1.25 'Manrope', sans-serif; }
+.cart-item { display: flex; align-items: center; justify-content: space-between; gap: 20px; border-top: 1px solid #eceee7; padding: 20px 0; }
+.cart-item:last-child { padding-bottom: 0; }
+.cart-item-copy { min-width: 0; }
+.cart-item h3 { margin: 0; font: 700 17px/1.3 'Manrope', sans-serif; }
+.cart-unit-price { margin: 7px 0 0; color: #276447; font-size: 14px; font-weight: 700; }
+.cart-unit-price span { color: #718477; font-size: 12px; font-weight: 400; }
+.cart-item-actions { display: grid; justify-items: end; gap: 8px; flex: 0 0 auto; }
+.quantity-control { display: inline-flex; align-items: center; gap: 12px; border: 1px solid #dce3d9; border-radius: 8px; padding: 3px 7px; }
+.quantity-control button { display: grid; width: 26px; height: 26px; place-items: center; border: 0; border-radius: 6px; color: #276447; background: transparent; font-size: 19px; cursor: pointer; }
+.quantity-control button:hover:not(:disabled) { background: #edf4e9; }
+.quantity-control button:disabled { color: #aeb9af; cursor: not-allowed; }
+.quantity-control output { min-width: 14px; text-align: center; color: #1d3028; font-size: 13px; font-weight: 700; }
+.cart-line-total { color: #1d3028; font-size: 14px; }
+.remove-item-button { border: 0; padding: 2px 0; color: #8d3028; background: transparent; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.cart-item-alert { margin: 10px 0 0; color: #8d3028; font-size: 12px; line-height: 1.5; }
+.price-change { display: grid; justify-items: start; gap: 7px; margin-top: 12px; border-left: 3px solid #e47743; padding: 9px 12px; color: #60422f; background: #fff5eb; font-size: 12px; line-height: 1.5; }
+.price-change p { margin: 0; }
+.price-change .secondary-button { padding: 7px 10px; }
+.cart-summary { position: sticky; top: 20px; padding: 22px; }
+.cart-summary h2 { margin: 0; font: 700 19px 'Manrope', sans-serif; }
+.cart-subtotal { margin: 12px 0 0; color: #1d4939; font: 800 26px 'Manrope', sans-serif; }
+.cart-summary-note { margin: 12px 0 0; color: #718477; font-size: 12px; line-height: 1.6; }
+.cart-summary .secondary-link { display: inline-flex; margin-top: 22px; font-size: 13px; }
+.dialog-backdrop { position: fixed; z-index: 20; inset: 0; display: grid; place-items: center; padding: 20px; background: #15221dcc; }
+.switch-dialog { width: min(460px, 100%); border: 1px solid #e5e6dc; border-radius: 17px; padding: 25px; background: #fffefa; box-shadow: 0 25px 80px #101a1766; }
+.switch-dialog h2 { margin: 0; font: 800 26px/1.2 'Manrope', sans-serif; letter-spacing: -1px; }
+.switch-dialog .card-description { margin-top: 12px; }
+.dialog-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
+.dialog-actions .form-submit { padding: 10px 13px; font-size: 13px; }
 
 @media (max-width: 600px) {
   .site-header { flex-wrap: wrap; gap: 10px; }
@@ -130,4 +176,13 @@ footer span { margin-left: 5px; color: #e47743; }
   .dish-heading { flex-direction: column; gap: 7px; }
   .pagination { gap: 10px; }
   .pagination .secondary-button { padding: 9px 10px; }
+  .cart-layout { grid-template-columns: 1fr; }
+  .cart-summary { position: static; }
+  .cart-items { padding: 17px; }
+  .cart-item { align-items: flex-start; gap: 12px; }
+  .cart-item-actions { gap: 7px; }
+  .quantity-control { gap: 6px; }
+  .cart-restaurant-heading { align-items: flex-start; }
+  .dialog-actions { flex-direction: column-reverse; }
+  .dialog-actions button { width: 100%; }
 }

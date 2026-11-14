@@ -4,19 +4,25 @@ import { useAuth } from './context/AuthContext.jsx';
 import { AccountPage } from './pages/AccountPage.jsx';
 import { LoginPage } from './pages/LoginPage.jsx';
 import { RegisterPage } from './pages/RegisterPage.jsx';
+import { CartPage } from './pages/CartPage.jsx';
 import { RestaurantListPage } from './pages/RestaurantListPage.jsx';
 import { RestaurantMenuPage } from './pages/RestaurantMenuPage.jsx';
 import { ProtectedRoute } from './routes/ProtectedRoute.jsx';
+import { useCart } from './context/CartContext.jsx';
 import './styles.css';
 
 function SiteHeader() {
   const { user, logout } = useAuth();
+  const { itemCount } = useCart();
 
   return (
     <header className="site-header">
       <Link className="wordmark" to="/">Campus<span>Bite</span><b aria-hidden="true">.</b></Link>
       <div className="header-actions">
         <Link className="text-button" to="/restaurants">Browse restaurants</Link>
+        <Link className="cart-nav-link" to="/cart" aria-label={`Shopping cart, ${itemCount} ${itemCount === 1 ? 'item' : 'items'}`}>
+          Cart <span className="cart-count" aria-live="polite">{itemCount}</span>
+        </Link>
         {user ? (
           <>
             <span className="status-pill"><i aria-hidden="true" />{user.role.replaceAll('_', ' ')}</span>
@@ -78,6 +84,7 @@ export default function App() {
         <Route path="/api-status" element={<ApiStatus />} />
         <Route path="/restaurants" element={<RestaurantListPage />} />
         <Route path="/restaurants/:restaurantId" element={<RestaurantMenuPage />} />
+        <Route path="/cart" element={<CartPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/account/customer" element={<ProtectedRoute allowedRoles={["CUSTOMER"]}><AccountPage /></ProtectedRoute>} />

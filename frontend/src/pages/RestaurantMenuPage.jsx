@@ -4,6 +4,8 @@ import { ApiError } from '../api/client.js';
 import { fetchRestaurantById, fetchRestaurantMenu } from '../api/catalog.js';
 import { MenuItemCard } from '../components/MenuItemCard.jsx';
 import { Pagination } from '../components/Pagination.jsx';
+import { RestaurantSwitchDialog } from '../components/RestaurantSwitchDialog.jsx';
+import { useCart } from '../context/CartContext.jsx';
 
 const EMPTY_FILTERS = { search: '', minPrice: '', maxPrice: '' };
 
@@ -26,6 +28,9 @@ export function RestaurantMenuPage() {
   const [error, setError] = useState('');
   const [filterError, setFilterError] = useState('');
   const [retryKey, setRetryKey] = useState(0);
+  const [pendingCartItem, setPendingCartItem] = useState(null);
+  const [cartMessage, setCartMessage] = useState('');
+  const { cart, addItem, replaceCartWithItem } = useCart();
 
   useEffect(() => {
     let current = true;
@@ -90,6 +95,17 @@ export function RestaurantMenuPage() {
     setPage(1);
   }
 
+  function handleAddToCart(item) {
+    if (!restaurant) return;
+    setCartMessage('');
+    const result = addItem(restaurant, item);
+    if (result.requiresReplacement) {
+      setPendingCartItem(item);
+      return;
+    }
+    setCartMessage(`${item.name} added to your cart.`);
+  }
+
   return (
     <main className="discovery-page">
       <Link className="back-link" to="/restaurants">← All restaurants</Link>
@@ -101,6 +117,7 @@ export function RestaurantMenuPage() {
         </div>
       ) : (
         <>
+          {cartMessage && <p className="cart-toast" role="status">{cartMessage}</p>}
           {restaurant && (
             <section className="restaurant-hero">
               <p className="eyebrow">Restaurant menu</p>
@@ -155,13 +172,34 @@ export function RestaurantMenuPage() {
         {!isLoading && !error && result?.items.length > 0 && (
           <>
             <div className="dish-grid">
-              {result.items.map((item) => <MenuItemCard key={item.id} item={item} />)}
+              {result.items.map((item) => (
+                <MenuItemCard
+                  key={item.id}
+                  item={item}
+                  onAdd={handleAddToCart}
+                  cartQuantity={cart.restaurantId === restaurantId
+                    ? cart.items.find((line) => line.menuItemId === item.id)?.quantity || 0
+                    : 0}
+                />
+              ))}
             </div>
             <Pagination page={result.page} pageSize={result.page_size} total={result.total} onPageChange={setPage} />
           </>
         )}
           </section>
         </>
+      )}
+      {pendingCartItem && restaurant && (
+        <RestaurantSwitchDialog
+          currentRestaurant={cart.restaurantName}
+          nextRestaurant={restaurant.name}
+          onKeepCart={() => setPendingCartItem(null)}
+          onReplaceCart={() => {
+            replaceCartWithItem(restaurant, pendingCartItem);
+            setCartMessage(`${pendingCartItem.name} added to your new cart.`);
+            setPendingCartItem(null);
+          }}
+        />
       )}
     </main>
   );
