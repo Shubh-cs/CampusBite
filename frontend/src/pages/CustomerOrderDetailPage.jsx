@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { fetchRestaurantById } from '../api/catalog.js';
 import { cancelOrder, fetchOrder } from '../api/orders.js';
+import { fetchOrderRefundRequest, createOrderRefundRequest } from '../api/refunds.js';
+import { fetchOrderReview, submitOrderReview } from '../api/reviews.js';
 import { formatINR, itemSubtotalPaise } from '../context/CartContext.jsx';
 
 const DATE_FORMAT = new Intl.DateTimeFormat('en-IN', {
@@ -65,6 +67,18 @@ export function CustomerOrderDetailPage() {
   const [error, setError] = useState('');
   const [cancelMessage, setCancelMessage] = useState('');
   const [retryKey, setRetryKey] = useState(0);
+  const [relatedRetryKey, setRelatedRetryKey] = useState(0);
+  const [review, setReview] = useState(null);
+  const [rating, setRating] = useState('5');
+  const [comment, setComment] = useState('');
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewError, setReviewError] = useState('');
+  const [refundRequest, setRefundRequest] = useState(null);
+  const [refundRequestLoaded, setRefundRequestLoaded] = useState(false);
+  const [refundReason, setRefundReason] = useState('');
+  const [refundSubmitting, setRefundSubmitting] = useState(false);
+  const [refundError, setRefundError] = useState('');
 
   const loadOrder = useCallback(async (showLoader = true) => {
     if (showLoader) setIsLoading(true);
@@ -87,6 +101,89 @@ export function CustomerOrderDetailPage() {
   }, [orderId]);
 
   useEffect(() => { void loadOrder(); }, [loadOrder, retryKey]);
+
+  useEffect(() => {
+    if (!order) return undefined;
+    if (!order.delivered_at) {
+      setReview(null);
+      setRefundRequest(null);
+      setRefundRequestLoaded(true);
+      setReviewLoading(false);
+      setReviewError('');
+      setRefundError('');
+      return undefined;
+    }
+
+    let active = true;
+    setReviewLoading(true);
+    setRefundRequestLoaded(false);
+    setReviewError('');
+    setRefundError('');
+    Promise.all([
+      fetchOrderReview(order.id).then((value) => ({ value })).catch((error) => ({ error })),
+      fetchOrderRefundRequest(order.id).then((value) => ({ value })).catch((error) => ({ error })),
+    ]).then(([reviewResult, refundResult]) => {
+      if (!active) return;
+      if (reviewResult.value) setReview(reviewResult.value);
+      else if (reviewResult.error?.status === 404) setReview(null);
+      else if (reviewResult.error) setReviewError(reviewResult.error.message || 'Review status could not be loaded.');
+
+      if (refundResult.value) {
+        setRefundRequest(refundResult.value);
+        setRefundRequestLoaded(true);
+      } else if (refundResult.error?.status === 404) {
+        setRefundRequest(null);
+        setRefundRequestLoaded(true);
+      } else if (refundResult.error) {
+        setRefundRequest(null);
+        setRefundError(`We couldn't verify whether a refund request already exists. ${refundResult.error.message || 'Please try again.'}`);
+      }
+    }).finally(() => {
+      if (active) setReviewLoading(false);
+    });
+    return () => { active = false; };
+  }, [order?.id, order?.delivered_at, relatedRetryKey]);
+
+  async function handleReviewSubmit(event) {
+    event.preventDefault();
+    if (!order || !order.delivered_at) return;
+    setReviewSubmitting(true);
+    setReviewError('');
+    try {
+      const savedReview = await submitOrderReview(order.id, { rating: Number(rating), comment: comment.trim() || null });
+      setReview(savedReview);
+    } catch (requestError) {
+      setReviewError(requestError.message || 'Your review could not be submitted.');
+    } finally {
+      setReviewSubmitting(false);
+    }
+  }
+
+  async function handleRefundRequest(event) {
+    event.preventDefault();
+    if (!order || order.status !== 'DELIVERED') return;
+    const reason = refundReason.trim();
+    if (!reason) {
+      setRefundError('Enter a reason for your refund request.');
+      return;
+    }
+    setRefundSubmitting(true);
+    setRefundError('');
+    try {
+      const savedRequest = await createOrderRefundRequest(order.id, reason);
+      setRefundRequest(savedRequest);
+      setRefundRequestLoaded(true);
+      setRefundReason('');
+    } catch (requestError) {
+      setRefundError(requestError.message || 'Your refund request could not be submitted.');
+      if (requestError.status === 409) {
+        setRetryKey((key) => key + 1);
+        setRelatedRetryKey((key) => key + 1);
+      }
+    } finally {
+      setRefundSubmitting(false);
+    }
+  }
 
   async function handleCancel() {
     if (!order || order.status !== 'PLACED') return;
@@ -149,11 +246,42 @@ export function CustomerOrderDetailPage() {
               {order.delivered_at && <><p className="card-kicker">Delivered</p><p>{formatDate(order.delivered_at)}</p></>}
               {order.updated_at && <p className="order-last-updated">Last updated {formatDate(order.updated_at)}</p>}
               <p className="card-kicker">Payment</p><p>{order.payment_status}</p>
+              {refundRequest && <><p className="card-kicker">Refund request</p><p>{refundRequest.status}</p></>}
               {order.status === 'PLACED' && (
                 <button className="cancel-order-button" type="button" onClick={() => setShowCancelConfirmation(true)}>Cancel order</button>
               )}
             </aside>
           </div>
+          {order.delivered_at && <section className="order-detail-card review-refund-card" aria-label="Review and refund options">
+            <div className="section-heading"><div><p className="card-kicker">Order feedback</p><h2>Review and refund</h2></div>
+              <button className="secondary-button" type="button" onClick={() => { setRetryKey((key) => key + 1); setRelatedRetryKey((key) => key + 1); }}>Refresh request status</button>
+            </div>
+            {reviewLoading && <p className="state-panel" role="status">Loading review and refund status…</p>}
+            <div className="review-refund-grid">
+              <section aria-labelledby="customer-review-title">
+                <h3 id="customer-review-title">Restaurant review</h3>
+                {reviewError && <p className="form-message form-message--error" role="alert">{reviewError} <button className="inline-retry" type="button" onClick={() => setRelatedRetryKey((key) => key + 1)}>Retry</button></p>}
+                {!reviewLoading && !reviewError && review && <div className="review-existing" role="status"><strong>Your rating: {review.rating} / 5</strong>{review.comment && <p>{review.comment}</p>}<small>Submitted {formatDate(review.created_at)}</small></div>}
+                {!reviewLoading && !reviewError && !review && <form className="review-refund-form" onSubmit={handleReviewSubmit}>
+                  <label className="form-field"><span>Rating</span><select required value={rating} onChange={(event) => setRating(event.target.value)}>{[5, 4, 3, 2, 1].map((value) => <option value={value} key={value}>{value} / 5</option>)}</select></label>
+                  <label className="form-field"><span>Review (optional)</span><textarea rows="3" value={comment} onChange={(event) => setComment(event.target.value)} /></label>
+                  {reviewError && <p className="form-message form-message--error" role="alert">{reviewError}</p>}
+                  <button className="form-submit" type="submit" disabled={reviewSubmitting}>{reviewSubmitting ? 'Submitting…' : 'Submit review'}</button>
+                </form>}
+              </section>
+              <section aria-labelledby="customer-refund-title">
+                <h3 id="customer-refund-title">Full refund request</h3>
+                {refundError && <p className="form-message form-message--error" role="alert">{refundError} <button className="inline-retry" type="button" onClick={() => setRelatedRetryKey((key) => key + 1)}>Refresh status</button></p>}
+                {refundRequest && <div className="review-existing" role="status"><strong>Status: {refundRequest.status}</strong><p>{refundRequest.reason}</p><small>Requested {formatDate(refundRequest.created_at)}{refundRequest.reviewed_at ? ` · Decided ${formatDate(refundRequest.reviewed_at)}` : ''}</small></div>}
+                {!refundRequest && refundRequestLoaded && !refundError && !reviewLoading && order.status === 'DELIVERED' && <form className="review-refund-form" onSubmit={handleRefundRequest}>
+                  <p className="order-list-meta">Request a full refund for this delivered order. The restaurant owner will review your reason.</p>
+                  <label className="form-field"><span>Reason</span><textarea rows="3" required value={refundReason} onChange={(event) => setRefundReason(event.target.value)} /></label>
+                  <button className="form-submit" type="submit" disabled={refundSubmitting}>{refundSubmitting ? 'Submitting…' : 'Request full refund'}</button>
+                </form>}
+                {!refundRequest && !reviewLoading && order.status !== 'DELIVERED' && <p className="order-list-meta">Refund requests are available only before a delivered order is refunded.</p>}
+              </section>
+            </div>
+          </section>}
         </>
       )}
       {showCancelConfirmation && (

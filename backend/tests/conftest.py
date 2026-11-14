@@ -16,7 +16,10 @@ from app.routers.delivery_orders import router as delivery_orders_router
 from app.routers.owner_menu import router as owner_menu_router
 from app.routers.owner_orders import router as owner_orders_router
 from app.routers.orders import router as orders_router
+from app.routers.refunds import customer_router as customer_refunds_router
+from app.routers.refunds import owner_router as owner_refunds_router
 from app.routers.restaurants import router as restaurants_router
+from app.routers.reviews import router as reviews_router
 from app.schemas.auth import UserPublic
 
 TEST_JWT_SECRET = "test-only-secret-with-at-least-32-bytes"
@@ -26,7 +29,10 @@ auth_test_app.include_router(auth_router)
 auth_test_app.include_router(restaurants_router)
 auth_test_app.include_router(owner_menu_router)
 auth_test_app.include_router(orders_router)
+auth_test_app.include_router(reviews_router)
+auth_test_app.include_router(customer_refunds_router)
 auth_test_app.include_router(owner_orders_router)
+auth_test_app.include_router(owner_refunds_router)
 auth_test_app.include_router(delivery_orders_router)
 
 

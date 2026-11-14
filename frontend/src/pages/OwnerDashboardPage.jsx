@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchOwnerOrders, fetchAllOwnerOrders, fetchOwnerRestaurant } from '../api/ownerOrders.js';
 import { Pagination } from '../components/Pagination.jsx';
+import { OwnerRefundRequests } from '../components/OwnerRefundRequests.jsx';
 import { formatINR } from '../context/CartContext.jsx';
 
 const PAGE_SIZE = 10;
@@ -113,6 +114,7 @@ export function OwnerDashboardPage() {
               <Pagination page={ordersPage.page} pageSize={ordersPage.page_size} total={ordersPage.total} onPageChange={setPage} />
             </>}
           </section>
+          <OwnerRefundRequests onUpdated={loadDashboard} />
         </>
       )}
     </main>

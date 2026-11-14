@@ -15,7 +15,7 @@ import jwt
 import pytest
 from fastapi.testclient import TestClient
 from pydantic import SecretStr
-from sqlalchemy import create_engine, text, update
+from sqlalchemy import create_engine, select, text, update
 from sqlalchemy.engine import make_url
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
@@ -460,4 +460,171 @@ def test_postgres_order_checkout_owner_assignment_and_delivery_lifecycle(
         and entries[0].status == "MOCK_PAID"
         and entries[0].amount == Decimal("251.00"),
         "PostgreSQL checkout did not create the expected mock payment ledger entry.",
+    )
+
+
+def test_postgres_refund_approval_preserves_payment_and_allows_post_refund_review(
+    postgres_client, postgres_session, postgres_role_users, postgres_test_run_id
+):
+    owner = postgres_role_users["OWNER"]
+    customer = postgres_role_users["CUSTOMER"]
+    restaurant = Restaurant(
+        owner_id=owner.id,
+        name=f"Review Refund {postgres_test_run_id[:12]}",
+        description="Review/refund PostgreSQL fixture",
+        address="Test campus address",
+    )
+    postgres_session.add(restaurant)
+    postgres_session.flush()
+    menu_item = MenuItem(
+        restaurant_id=restaurant.id,
+        name="Review Refund Integration Dish",
+        category="Mains",
+        price=Decimal("125.50"),
+        is_available=True,
+    )
+    postgres_session.add(menu_item)
+    postgres_session.flush()
+
+    _, customer_token = _login(postgres_client, customer.email)
+    customer_headers = {"Authorization": f"Bearer {customer_token}"}
+    checkout = postgres_client.post(
+        "/orders",
+        headers=customer_headers,
+        json={
+            "items": [{"menu_item_id": menu_item.id, "quantity": 2}],
+            "delivery_address": "Review refund test address",
+        },
+    )
+    _require(checkout.status_code == 201, "PostgreSQL review/refund fixture checkout failed.")
+    order_id = _response_json(checkout).get("id")
+    order = postgres_session.get(Order, order_id)
+    order.status = "DELIVERED"
+    order.delivered_at = datetime.now(timezone.utc)
+    postgres_session.commit()
+
+    _, owner_token = _login(postgres_client, owner.email)
+    owner_headers = {"Authorization": f"Bearer {owner_token}"}
+    request_response = postgres_client.post(
+        f"/orders/{order_id}/refund-request",
+        headers=customer_headers,
+        json={"reason": "PostgreSQL integration refund reason"},
+    )
+    _require(request_response.status_code == 201, "PostgreSQL refund request creation failed.")
+    request_id = _response_json(request_response).get("id")
+    owner_list = postgres_client.get("/owner/refund-requests", headers=owner_headers)
+    _require(owner_list.status_code == 200, "Owner could not list PostgreSQL refund requests.")
+    owner_item = _response_json(owner_list).get("items", [{}])[0]
+    _require(
+        owner_item.get("id") == request_id and owner_item.get("customer", {}).get("email") == customer.email,
+        "PostgreSQL owner refund response did not include its scoped order/customer data.",
+    )
+
+    original = postgres_session.scalar(
+        select(PaymentLedgerEntry).where(
+            PaymentLedgerEntry.order_id == order_id,
+            PaymentLedgerEntry.entry_type == "PAYMENT",
+        )
+    )
+    original_values = (original.status, original.amount, original.created_at)
+    approved = postgres_client.patch(
+        f"/owner/refund-requests/{request_id}",
+        headers=owner_headers,
+        json={"status": "APPROVED"},
+    )
+    _require(approved.status_code == 200 and approved.json().get("status") == "APPROVED", "PostgreSQL refund approval failed.")
+    postgres_session.refresh(order)
+    postgres_session.refresh(original)
+    entries = postgres_session.scalars(
+        select(PaymentLedgerEntry)
+        .where(PaymentLedgerEntry.order_id == order_id)
+        .order_by(PaymentLedgerEntry.id)
+    ).all()
+    _require(
+        order.status == "REFUNDED" and order.payment_status == "REFUNDED",
+        "PostgreSQL refund approval did not update order/payment status.",
+    )
+    _require(
+        (original.status, original.amount, original.created_at) == original_values,
+        "PostgreSQL refund approval changed the original payment entry.",
+    )
+    _require(
+        len(entries) == 2
+        and entries[1].entry_type == "REFUND"
+        and entries[1].status == "REFUNDED"
+        and entries[1].amount == Decimal("251.00"),
+        "PostgreSQL refund ledger entry did not record the full original payment.",
+    )
+
+    review = postgres_client.post(
+        f"/orders/{order_id}/review",
+        headers=customer_headers,
+        json={"rating": 5, "comment": "Still reviewable after refund"},
+    )
+    _require(review.status_code == 201, "A delivered PostgreSQL order could not be reviewed after refund.")
+    _require(
+        postgres_client.get(f"/orders/{order_id}/review", headers=customer_headers).status_code == 200,
+        "PostgreSQL customer review retrieval failed.",
+    )
+
+
+def test_postgres_refund_rejection_leaves_order_and_payment_unchanged(
+    postgres_client, postgres_session, postgres_role_users, postgres_test_run_id
+):
+    owner = postgres_role_users["OWNER"]
+    customer = postgres_role_users["CUSTOMER"]
+    restaurant = Restaurant(
+        owner_id=owner.id,
+        name=f"Refund Rejection {postgres_test_run_id[:12]}",
+        description="Refund rejection PostgreSQL fixture",
+        address="Test campus address",
+    )
+    postgres_session.add(restaurant)
+    postgres_session.flush()
+    menu_item = MenuItem(
+        restaurant_id=restaurant.id,
+        name="Refund Rejection Integration Dish",
+        category="Mains",
+        price=Decimal("70.00"),
+        is_available=True,
+    )
+    postgres_session.add(menu_item)
+    postgres_session.flush()
+    _, customer_token = _login(postgres_client, customer.email)
+    _, owner_token = _login(postgres_client, owner.email)
+    customer_headers = {"Authorization": f"Bearer {customer_token}"}
+    owner_headers = {"Authorization": f"Bearer {owner_token}"}
+    checkout = postgres_client.post(
+        "/orders",
+        headers=customer_headers,
+        json={"items": [{"menu_item_id": menu_item.id, "quantity": 1}], "delivery_address": "Rejection test address"},
+    )
+    _require(checkout.status_code == 201, "PostgreSQL rejection fixture checkout failed.")
+    order_id = _response_json(checkout).get("id")
+    order = postgres_session.get(Order, order_id)
+    order.status = "DELIVERED"
+    order.delivered_at = datetime.now(timezone.utc)
+    postgres_session.commit()
+    request_response = postgres_client.post(
+        f"/orders/{order_id}/refund-request",
+        headers=customer_headers,
+        json={"reason": "Reject this PostgreSQL test request"},
+    )
+    _require(request_response.status_code == 201, "PostgreSQL refund rejection fixture request failed.")
+    request_id = _response_json(request_response).get("id")
+    rejected = postgres_client.patch(
+        f"/owner/refund-requests/{request_id}", headers=owner_headers, json={"status": "REJECTED"}
+    )
+    _require(rejected.status_code == 200 and rejected.json().get("status") == "REJECTED", "PostgreSQL refund rejection failed.")
+    postgres_session.refresh(order)
+    entries = postgres_session.scalars(
+        select(PaymentLedgerEntry).where(PaymentLedgerEntry.order_id == order_id)
+    ).all()
+    _require(
+        order.status == "DELIVERED"
+        and order.payment_status == "MOCK_PAID"
+        and len(entries) == 1
+        and entries[0].entry_type == "PAYMENT"
+        and entries[0].amount == Decimal("70.00"),
+        "PostgreSQL rejection changed the order/payment or created a refund ledger entry.",
     )

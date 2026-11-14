@@ -235,6 +235,23 @@ footer span { margin-left: 5px; color: #e47743; }
 .delivery-status-group > h2 { margin: 0 0 12px; color: #1d3028; font: 700 18px 'Manrope', sans-serif; }
 .delivery-status-group .order-list-heading h3 { font: 700 18px/1.3 'Manrope', sans-serif; }
 .role-order-page .order-detail-header { margin-bottom: 18px; }
+.refund-requests-section { border-top: 1px solid #e5e6dc; padding-top: 25px; }
+.refund-request-card { display: grid; gap: 9px; }
+.refund-customer-contact, .refund-created-at { margin: 0; color: #718477; font-size: 13px; overflow-wrap: anywhere; }
+.refund-reason { margin: 3px 0; color: #394d40; font-size: 14px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+.refund-decision-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 5px; }
+.review-refund-card { margin-top: 18px; }
+.review-refund-card h2 { margin-bottom: 0; }
+.review-refund-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; margin-top: 18px; }
+.review-refund-grid > section { min-width: 0; border-top: 1px solid #eceee7; padding-top: 16px; }
+.review-refund-grid h3 { margin: 0 0 12px; color: #1d4939; font: 700 17px 'Manrope', sans-serif; }
+.review-refund-form { display: grid; gap: 12px; }
+.review-refund-form .form-field { display: grid; gap: 7px; color: #43584a; font-size: 12px; font-weight: 700; }
+.review-refund-form select, .review-refund-form textarea { width: 100%; border: 1px solid #dce3d9; border-radius: 8px; padding: 10px 11px; color: #1d3028; background: #fff; font: inherit; font-size: 14px; }
+.review-refund-form textarea { resize: vertical; }
+.review-existing { border: 1px solid #dce8d8; border-radius: 10px; padding: 14px; color: #394d40; background: #f7faf4; }
+.review-existing p { margin: 8px 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.review-existing small { color: #718477; }
 .dialog-backdrop { position: fixed; z-index: 20; inset: 0; display: grid; place-items: center; padding: 20px; background: #15221dcc; }
 .switch-dialog { width: min(460px, 100%); border: 1px solid #e5e6dc; border-radius: 17px; padding: 25px; background: #fffefa; box-shadow: 0 25px 80px #101a1766; }
 .switch-dialog h2 { margin: 0; font: 800 26px/1.2 'Manrope', sans-serif; letter-spacing: -1px; }
@@ -276,6 +293,7 @@ footer span { margin-left: 5px; color: #e47743; }
   .role-filter-bar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .role-filter-bar .form-submit { grid-column: 1 / -1; }
   .role-order-layout { grid-template-columns: 1fr; }
+  .review-refund-grid { grid-template-columns: 1fr; }
   .partner-assignment { grid-template-columns: 1fr; }
   .sales-metric { align-items: flex-start; flex-direction: column; }
   .order-detail-header { align-items: flex-start; flex-direction: column; }
