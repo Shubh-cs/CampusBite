@@ -110,6 +110,14 @@ To verify the frontend production bundle, run `npm run build` from `frontend` af
 
 ## Configuration and remaining milestones
 
-`.env.example` lists database, JWT, optional OpenAI, and frontend-origin settings. It contains placeholders; keep actual secrets in the ignored `.env` file.
+`.env.example` lists database, JWT, optional OpenAI, and frontend-origin settings. It contains placeholders; keep actual secrets in the ignored `.env` file. `OPENAI_API_KEY` and `OPENAI_MODEL` enable the optional customer order-insights integration. If either is unavailable, the insights API returns a clear unavailable message and the rest of CampusBite remains usable.
 
-Authentication and authorization plus the Milestone 3A restaurant and menu backend are implemented. Ordering and delivery workflows, dashboards, refunds, AI insights, and reminders remain future milestones. The authentication landing pages are not role dashboards.
+## Milestone 8: AI-powered customer order insights
+
+- CUSTOMER accounts can ask stateless questions through `POST /insights/orders`. Each request independently loads only the authenticated customer's order history; no chat history is stored.
+- The backend calculates order counts, item summaries, gross successful payments, voided amounts, refunded amounts, and net spending from order and payment records. It uses historical order-item price snapshots, and computes net spending as gross successful payments minus voided amounts minus refunded amounts.
+- Verified facts are returned separately from the AI explanation. The frontend displays both, labels the backend-calculated figures, and provides example questions, loading, error, and retry states at `/order-insights`.
+- OpenAI access stays in the backend. Configure `OPENAI_API_KEY` and `OPENAI_MODEL` locally to enable answers. The app does not require these values to run other features.
+- Backend tests mock the provider; automated tests do not make billable OpenAI requests. From `backend`, run `python -m pytest -q tests/test_order_insights.py` for the focused test module or `python -m pytest -q` for the full suite.
+
+AI explanations are not authoritative for financial figures; use the separately displayed verified facts for exact amounts and counts. No embeddings, vector database, RAG, persistent conversation history, or database schema change is used for this feature.

@@ -252,6 +252,38 @@ footer span { margin-left: 5px; color: #e47743; }
 .review-existing { border: 1px solid #dce8d8; border-radius: 10px; padding: 14px; color: #394d40; background: #f7faf4; }
 .review-existing p { margin: 8px 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 .review-existing small { color: #718477; }
+.order-insights-page > .cart-title { font-size: clamp(36px, 6vw, 58px); }
+.insights-intro { max-width: 720px; margin: 14px 0 24px; color: #6e7d73; line-height: 1.7; }
+.order-insights-card { margin-top: 18px; border: 1px solid #e5e6dc; border-radius: 16px; padding: clamp(18px, 3vw, 28px); background: #fffefa; box-shadow: 0 10px 30px #2b443008; }
+.order-insights-card > h2 { margin: 0; color: #1d4939; font: 800 25px/1.2 'Manrope', sans-serif; letter-spacing: -1px; }
+.insights-question-form { display: grid; gap: 12px; margin-top: 18px; }
+.insights-question-form .form-field { display: grid; gap: 8px; color: #43584a; font-size: 13px; font-weight: 700; }
+.insights-question-form textarea { width: 100%; resize: vertical; border: 1px solid #dce3d9; border-radius: 9px; padding: 12px; color: #1d3028; background: #fff; font: inherit; font-size: 15px; }
+.insights-submit-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.insights-submit-row small, .insights-facts-note { color: #718477; font-size: 12px; }
+.insights-suggestions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 21px; }
+.insights-suggestions .card-kicker { width: 100%; margin-bottom: 1px; }
+.insight-prompt { border: 1px solid #dce5d8; border-radius: 99px; padding: 8px 12px; color: #315440; background: #f7faf4; font: inherit; font-size: 12px; cursor: pointer; }
+.insight-prompt:hover:not(:disabled) { border-color: #8eaf91; background: #edf5eb; }
+.insight-prompt:disabled { opacity: .6; cursor: wait; }
+.insights-results { margin-top: 20px; }
+.insights-answer { margin: 16px 0 0; color: #394d40; line-height: 1.75; white-space: pre-wrap; }
+.insights-facts-note { margin: 8px 0 18px; }
+.insights-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.insights-metrics article { display: grid; gap: 8px; min-width: 0; border: 1px solid #e5e9df; border-radius: 10px; padding: 13px; background: #f9faf6; }
+.insights-metrics article span { color: #718477; font-size: 12px; }
+.insights-metrics article strong { color: #1d4939; font-size: 17px; overflow-wrap: anywhere; }
+.insights-metrics .insights-net-metric { border-color: #b9d2b8; background: #eef6eb; }
+.insights-fact-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; margin-top: 23px; }
+.insights-fact-columns h3 { margin: 0 0 10px; color: #1d4939; font: 700 16px 'Manrope', sans-serif; }
+.insights-fact-columns ul { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.insights-fact-columns li { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px solid #eceee7; padding: 8px 0; color: #52685a; font-size: 13px; }
+.insights-fact-columns li strong { color: #284c37; white-space: nowrap; }
+.insights-recent-orders { margin-top: 22px; border-top: 1px solid #eceee7; padding-top: 16px; color: #315440; }
+.insights-recent-orders summary { cursor: pointer; font-weight: 700; }
+.insights-recent-list { display: grid; gap: 10px; margin-top: 12px; }
+.insights-recent-list article { display: grid; gap: 5px; border-radius: 9px; padding: 12px; background: #f8f9f4; font-size: 12px; }
+.insights-recent-list article span { color: #718477; overflow-wrap: anywhere; }
 .dialog-backdrop { position: fixed; z-index: 20; inset: 0; display: grid; place-items: center; padding: 20px; background: #15221dcc; }
 .switch-dialog { width: min(460px, 100%); border: 1px solid #e5e6dc; border-radius: 17px; padding: 25px; background: #fffefa; box-shadow: 0 25px 80px #101a1766; }
 .switch-dialog h2 { margin: 0; font: 800 26px/1.2 'Manrope', sans-serif; letter-spacing: -1px; }
@@ -294,6 +326,8 @@ footer span { margin-left: 5px; color: #e47743; }
   .role-filter-bar .form-submit { grid-column: 1 / -1; }
   .role-order-layout { grid-template-columns: 1fr; }
   .review-refund-grid { grid-template-columns: 1fr; }
+  .insights-metrics, .insights-fact-columns { grid-template-columns: 1fr; }
+  .insights-submit-row { align-items: stretch; flex-direction: column; }
   .partner-assignment { grid-template-columns: 1fr; }
   .sales-metric { align-items: flex-start; flex-direction: column; }
   .order-detail-header { align-items: flex-start; flex-direction: column; }

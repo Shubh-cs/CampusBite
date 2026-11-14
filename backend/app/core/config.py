@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+psycopg://campusbite:campusbite-local@localhost:5432/campusbite"
     jwt_secret_key: SecretStr | None = None
     jwt_access_token_expire_minutes: int = 60
-    openai_api_key: str | None = None
+    openai_api_key: SecretStr | None = None
     openai_model: str | None = None
     frontend_origin: str = "http://localhost:5173"
 

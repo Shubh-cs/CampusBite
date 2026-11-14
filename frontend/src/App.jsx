@@ -9,6 +9,7 @@ import { CheckoutPage } from './pages/CheckoutPage.jsx';
 import { OrderConfirmationPage } from './pages/OrderConfirmationPage.jsx';
 import { CustomerOrdersPage } from './pages/CustomerOrdersPage.jsx';
 import { CustomerOrderDetailPage } from './pages/CustomerOrderDetailPage.jsx';
+import { CustomerOrderInsightsPage } from './pages/CustomerOrderInsightsPage.jsx';
 import { OwnerDashboardPage } from './pages/OwnerDashboardPage.jsx';
 import { OwnerOrderDetailPage } from './pages/OwnerOrderDetailPage.jsx';
 import { DeliveryOrdersPage } from './pages/DeliveryOrdersPage.jsx';
@@ -33,7 +34,10 @@ function SiteHeader() {
         </Link>
         {user ? (
           <>
-            {user.role === 'CUSTOMER' && <Link className="text-button" to="/orders">My orders</Link>}
+            {user.role === 'CUSTOMER' && <>
+              <Link className="text-button" to="/orders">My orders</Link>
+              <Link className="text-button" to="/order-insights">Order insights</Link>
+            </>}
             {user.role === 'OWNER' && <Link className="text-button" to="/account/owner">Owner dashboard</Link>}
             {user.role === 'DELIVERY_PARTNER' && <Link className="text-button" to="/account/delivery-partner">My deliveries</Link>}
             <span className="status-pill"><i aria-hidden="true" />{user.role.replaceAll('_', ' ')}</span>
@@ -100,6 +104,7 @@ export default function App() {
         <Route path="/order-confirmation/:orderId" element={<ProtectedRoute allowedRoles={["CUSTOMER"]}><OrderConfirmationPage /></ProtectedRoute>} />
         <Route path="/orders" element={<ProtectedRoute allowedRoles={["CUSTOMER"]}><CustomerOrdersPage /></ProtectedRoute>} />
         <Route path="/orders/:orderId" element={<ProtectedRoute allowedRoles={["CUSTOMER"]}><CustomerOrderDetailPage /></ProtectedRoute>} />
+        <Route path="/order-insights" element={<ProtectedRoute allowedRoles={["CUSTOMER"]}><CustomerOrderInsightsPage /></ProtectedRoute>} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/account/customer" element={<ProtectedRoute allowedRoles={["CUSTOMER"]}><AccountPage /></ProtectedRoute>} />
