@@ -7,7 +7,9 @@ Set TEST_DATABASE_URL explicitly to the disposable Stage 2D database on
 
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
+from concurrent.futures import ThreadPoolExecutor
 import os
+import threading
 from typing import Any
 from uuid import uuid4
 
@@ -18,12 +20,12 @@ from pydantic import SecretStr
 from sqlalchemy import create_engine, select, text, update
 from sqlalchemy.engine import make_url
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.config import settings
 from app.core.security import JWT_ALGORITHM, hash_password
 from app.database import get_db
-from app.models import MenuItem, Order, PaymentLedgerEntry, Restaurant, User
+from app.models import MenuItem, Order, PaymentLedgerEntry, ReminderLog, Restaurant, User
 from tests.conftest import TEST_JWT_SECRET, TEST_PASSWORD, auth_test_app
 
 
@@ -628,3 +630,112 @@ def test_postgres_refund_rejection_leaves_order_and_payment_unchanged(
         and entries[0].amount == Decimal("70.00"),
         "PostgreSQL rejection changed the order/payment or created a refund ledger entry.",
     )
+
+
+def test_postgres_concurrent_reminder_checks_create_one_record(
+    postgres_session, postgres_test_run_id, monkeypatch
+):
+    """Two workers selecting the same stale order create one reminder."""
+    from app.services import reminders
+
+    database_url = os.environ["TEST_DATABASE_URL"]
+    engine = create_engine(database_url, pool_pre_ping=True)
+    independent_session = sessionmaker(bind=engine, expire_on_commit=False)
+    owner_email = _test_email(postgres_test_run_id, "reminder-owner")
+    customer_email = _test_email(postgres_test_run_id, "reminder-customer")
+    owner_id = None
+    customer_id = None
+    restaurant_id = None
+    order_id = None
+    fixed_now = datetime(2026, 11, 15, 12, 0, tzinfo=timezone.utc)
+    cutoff = fixed_now - timedelta(minutes=15)
+    barrier = threading.Barrier(2, timeout=20)
+    original_select_candidates = reminders._select_candidate_orders
+
+    try:
+        with independent_session() as setup:
+            owner = User(
+                full_name="PostgreSQL Reminder Race Owner",
+                email=owner_email,
+                password_hash=hash_password(TEST_PASSWORD),
+                role="OWNER",
+            )
+            customer = User(
+                full_name="PostgreSQL Reminder Race Customer",
+                email=customer_email,
+                password_hash=hash_password(TEST_PASSWORD),
+                role="CUSTOMER",
+            )
+            setup.add_all([owner, customer])
+            setup.flush()
+            owner_id, customer_id = owner.id, customer.id
+            restaurant = Restaurant(
+                owner_id=owner.id,
+                name=f"Reminder Race {postgres_test_run_id[:12]}",
+                address="Isolated PostgreSQL test address",
+            )
+            setup.add(restaurant)
+            setup.flush()
+            restaurant_id = restaurant.id
+            order = Order(
+                customer_id=customer.id,
+                restaurant_id=restaurant.id,
+                status="PLACED",
+                payment_status="MOCK_PAID",
+                delivery_address="Isolated PostgreSQL test address",
+                total_amount=Decimal("25.00"),
+                placed_at=cutoff - timedelta(minutes=1),
+                updated_at=cutoff - timedelta(seconds=1),
+            )
+            setup.add(order)
+            setup.flush()
+            order_id = order.id
+            setup.commit()
+
+        def synchronized_candidates(db, candidate_cutoff, existing_reminder):
+            candidates = original_select_candidates(db, candidate_cutoff, existing_reminder)
+            target_candidates = [row for row in candidates if row.id == order_id]
+            if not target_candidates:
+                raise AssertionError("The committed stale test order was not selected.")
+            barrier.wait()
+            return target_candidates
+
+        monkeypatch.setattr(reminders, "_select_candidate_orders", synchronized_candidates)
+
+        def run_worker():
+            with independent_session() as worker_session:
+                return reminders.create_due_reminders(worker_session, now=fixed_now)
+
+        with ThreadPoolExecutor(max_workers=2, thread_name_prefix="reminder-race-test") as workers:
+            futures = [workers.submit(run_worker) for _ in range(2)]
+            # result() re-raises worker exceptions in the pytest thread.
+            worker_results = [future.result(timeout=30) for future in futures]
+
+        with independent_session() as verify:
+            reminder_rows = verify.scalars(
+                select(ReminderLog).where(ReminderLog.order_id == order_id)
+            ).all()
+            assert len(reminder_rows) == 1
+            reminder = reminder_rows[0]
+            assert reminder.restaurant_id == restaurant_id
+            assert reminder.owner_id == owner_id
+            assert sum(worker_results) == 1
+    finally:
+        # The worker service commits, so remove only this test's committed rows.
+        # The fixture-created outer transaction is unrelated to these sessions.
+        with independent_session() as cleanup:
+            if order_id is not None:
+                cleanup.query(ReminderLog).filter(ReminderLog.order_id == order_id).delete(
+                    synchronize_session=False
+                )
+                cleanup.query(Order).filter(Order.id == order_id).delete(synchronize_session=False)
+            if restaurant_id is not None:
+                cleanup.query(Restaurant).filter(Restaurant.id == restaurant_id).delete(
+                    synchronize_session=False
+                )
+            if customer_id is not None:
+                cleanup.query(User).filter(User.id == customer_id).delete(synchronize_session=False)
+            if owner_id is not None:
+                cleanup.query(User).filter(User.id == owner_id).delete(synchronize_session=False)
+            cleanup.commit()
+        engine.dispose()
