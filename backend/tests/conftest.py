@@ -15,6 +15,7 @@ from app.routers.auth import router as auth_router
 from app.routers.delivery_orders import router as delivery_orders_router
 from app.routers.owner_menu import router as owner_menu_router
 from app.routers.owner_orders import router as owner_orders_router
+from app.routers.owner_reminders import router as owner_reminders_router
 from app.routers.orders import router as orders_router
 from app.routers.order_insights import router as order_insights_router
 from app.routers.refunds import customer_router as customer_refunds_router
@@ -34,6 +35,7 @@ auth_test_app.include_router(order_insights_router)
 auth_test_app.include_router(reviews_router)
 auth_test_app.include_router(customer_refunds_router)
 auth_test_app.include_router(owner_orders_router)
+auth_test_app.include_router(owner_reminders_router)
 auth_test_app.include_router(owner_refunds_router)
 auth_test_app.include_router(delivery_orders_router)
 

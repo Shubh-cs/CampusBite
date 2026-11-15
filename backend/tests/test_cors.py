@@ -1,13 +1,20 @@
 from fastapi.testclient import TestClient
 
+from app import main
 from app.core.config import settings
-from app.main import app
 
 
-def test_frontend_origin_can_send_authenticated_api_requests():
+def test_frontend_origin_can_send_authenticated_api_requests(monkeypatch):
     origin = settings.frontend_origin
+    scheduler_starts = []
 
-    with TestClient(app) as client:
+    async def inert_scheduler(stop_event):
+        scheduler_starts.append(True)
+        await stop_event.wait()
+
+    monkeypatch.setattr(main, "reminder_scheduler", inert_scheduler)
+
+    with TestClient(main.app) as client:
         response = client.options(
             "/auth/me",
             headers={
@@ -20,3 +27,4 @@ def test_frontend_origin_can_send_authenticated_api_requests():
     assert response.status_code == 200
     assert response.headers["access-control-allow-origin"] == origin
     assert "authorization" in response.headers["access-control-allow-headers"].lower()
+    assert scheduler_starts == [True]
