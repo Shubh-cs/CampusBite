@@ -6,6 +6,8 @@ import { formatINR } from '../context/CartContext.jsx';
 const EXAMPLE_QUESTIONS = [
   'Summarize my order history.',
   'Which dishes have I ordered most often?',
+  'How much did I spend this week?',
+  'Which of my orders are still not delivered?',
   'How much have I spent after cancellations and refunds?',
   'What was in my most recent order?',
 ];
@@ -100,11 +102,14 @@ export function CustomerOrderInsightsPage() {
 
       {result && (
         <div className="insights-results">
-          <section className="order-insights-card" aria-labelledby="insights-answer-title">
-            <p className="card-kicker">AI explanation</p>
-            <h2 id="insights-answer-title">Your answer</h2>
-            <p className="insights-answer">{result.answer}</p>
-          </section>
+          {result.notice && <p className="state-panel" role="status">{result.notice}</p>}
+          {result.answer && (
+            <section className="order-insights-card" aria-labelledby="insights-answer-title">
+              <p className="card-kicker">AI explanation</p>
+              <h2 id="insights-answer-title">Your answer</h2>
+              <p className="insights-answer">{result.answer}</p>
+            </section>
+          )}
           <section className="order-insights-card" aria-labelledby="verified-facts-title">
             <p className="card-kicker">Calculated by CampusBite</p>
             <h2 id="verified-facts-title">Verified order facts</h2>
@@ -116,6 +121,19 @@ export function CustomerOrderInsightsPage() {
               <article><span>Refunded amounts</span><strong>{money(result.verified_facts.refunded_amounts)}</strong></article>
               <article className="insights-net-metric"><span>Net spending</span><strong>{money(result.verified_facts.net_spending)}</strong></article>
             </div>
+            <section className="insights-weekly-activity" aria-labelledby="weekly-activity-title">
+              <h3 id="weekly-activity-title">This week’s payment activity</h3>
+              <p className="order-list-meta">
+                {formatDate(result.verified_facts.weekly_payment_activity.period_start)} – {formatDate(result.verified_facts.weekly_payment_activity.period_end)}
+              </p>
+              <div className="insights-metrics">
+                <article><span>Gross successful payments</span><strong>{money(result.verified_facts.weekly_payment_activity.gross_successful_payments)}</strong></article>
+                <article><span>Voided</span><strong>{money(result.verified_facts.weekly_payment_activity.voided_amounts)}</strong></article>
+                <article><span>Refunded</span><strong>{money(result.verified_facts.weekly_payment_activity.refunded_amounts)}</strong></article>
+                <article className="insights-net-metric"><span>Net payment activity</span><strong>{money(result.verified_facts.weekly_payment_activity.net_payment_activity)}</strong></article>
+              </div>
+              <p className="insights-facts-note">{result.verified_facts.weekly_payment_activity.accounting_note}</p>
+            </section>
             <div className="insights-fact-columns">
               <section>
                 <h3>Orders by status</h3>
@@ -130,6 +148,19 @@ export function CustomerOrderInsightsPage() {
                   : <ul>{result.verified_facts.most_ordered_items.map((item) => <li key={item.item_name}><span>{item.item_name} · {item.quantity_ordered} ordered</span><strong>{money(item.snapshot_spend)}</strong></li>)}</ul>}
               </section>
             </div>
+            <section className="insights-outstanding-orders" aria-labelledby="outstanding-orders-title">
+              <h3 id="outstanding-orders-title">Outstanding orders</h3>
+              {result.verified_facts.outstanding_orders.length === 0
+                ? <p className="order-list-meta">You have no active undelivered orders.</p>
+                : <div className="insights-recent-list">
+                    {result.verified_facts.outstanding_orders.map((order) => (
+                      <article key={order.order_id}>
+                        <strong>Order #{order.order_id} · {order.status.replaceAll('_', ' ')}</strong>
+                        <span>{order.restaurant_name} · Placed {formatDate(order.placed_at)}</span>
+                      </article>
+                    ))}
+                  </div>}
+            </section>
             {result.verified_facts.recent_orders.length > 0 && (
               <details className="insights-recent-orders">
                 <summary>Recent order details (up to {result.verified_facts.recent_order_limit})</summary>

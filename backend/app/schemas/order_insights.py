@@ -36,6 +36,25 @@ class RecentOrderInsightFact(BaseModel):
     items: list[OrderLineInsightFact]
 
 
+class WeeklyPaymentActivity(BaseModel):
+    period_start: datetime
+    period_end: datetime
+    gross_successful_payments: Decimal
+    voided_amounts: Decimal
+    refunded_amounts: Decimal
+    net_payment_activity: Decimal
+    accounting_note: Literal[
+        "Refunds and voids are subtracted in the week their ledger entries are posted, not the original order week."
+    ] = "Refunds and voids are subtracted in the week their ledger entries are posted, not the original order week."
+
+
+class OutstandingOrderFact(BaseModel):
+    order_id: int
+    status: str
+    placed_at: datetime
+    restaurant_name: str
+
+
 class VerifiedOrderFacts(BaseModel):
     currency: Literal["INR"] = "INR"
     timezone: Literal["Asia/Kolkata"] = "Asia/Kolkata"
@@ -45,11 +64,14 @@ class VerifiedOrderFacts(BaseModel):
     voided_amounts: Decimal
     refunded_amounts: Decimal
     net_spending: Decimal
+    weekly_payment_activity: WeeklyPaymentActivity
+    outstanding_orders: list[OutstandingOrderFact]
     most_ordered_items: list[ItemInsightFact]
     recent_orders: list[RecentOrderInsightFact]
     recent_order_limit: int
 
 
 class OrderInsightsResponse(BaseModel):
-    answer: str
+    answer: str | None = None
+    notice: str | None = None
     verified_facts: VerifiedOrderFacts
