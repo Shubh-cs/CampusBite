@@ -1,5 +1,5 @@
 export const ROLE_HOME_PATH = Object.freeze({
-  CUSTOMER: '/restaurants',
+  CUSTOMER: '/orders',
   OWNER: '/account/owner',
   DELIVERY_PARTNER: '/account/delivery-partner',
 });

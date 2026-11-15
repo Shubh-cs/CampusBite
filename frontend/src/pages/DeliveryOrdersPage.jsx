@@ -6,6 +6,7 @@ import { Pagination } from '../components/Pagination.jsx';
 import { formatINR } from '../context/CartContext.jsx';
 
 const PAGE_SIZE = 10;
+const REFUNDED_DELIVERY_GROUP = 'REFUNDED_DELIVERED';
 const FILTERS = [
   ['', 'All deliveries'],
   ['ASSIGNED', 'Assigned'],
@@ -52,10 +53,13 @@ export function DeliveryOrdersPage() {
   useEffect(() => { void loadDeliveries(); }, [loadDeliveries, retryKey]);
 
   const groupedOrders = (result?.items || []).reduce((groups, order) => {
-    (groups[order.status] ||= []).push(order);
+    const group = order.status === 'REFUNDED' && order.delivered_at
+      ? REFUNDED_DELIVERY_GROUP
+      : order.status;
+    (groups[group] ||= []).push(order);
     return groups;
   }, {});
-  const groupOrder = ['ASSIGNED', 'OUT_FOR_DELIVERY', 'DELIVERED'];
+  const groupOrder = ['ASSIGNED', 'OUT_FOR_DELIVERY', 'DELIVERED', REFUNDED_DELIVERY_GROUP];
 
   return (
     <main className="discovery-page role-dashboard">
@@ -69,7 +73,7 @@ export function DeliveryOrdersPage() {
       {!isLoading && !error && result?.items.length > 0 && <>
         {groupOrder.filter((group) => groupedOrders[group]?.length).map((group) => (
           <section className="delivery-status-group" aria-label={`${group.replaceAll('_', ' ')} deliveries`} key={group}>
-            <h2>{group.replaceAll('_', ' ')}</h2>
+            <h2>{group === REFUNDED_DELIVERY_GROUP ? 'Delivered · Refunded' : group.replaceAll('_', ' ')}</h2>
             <div className="role-order-list">
               {groupedOrders[group].map((order) => (
                 <article className="order-list-card" key={order.id}>
