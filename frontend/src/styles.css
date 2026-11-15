@@ -252,6 +252,35 @@ footer span { margin-left: 5px; color: #e47743; }
 .review-existing { border: 1px solid #dce8d8; border-radius: 10px; padding: 14px; color: #394d40; background: #f7faf4; }
 .review-existing p { margin: 8px 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 .review-existing small { color: #718477; }
+.owner-reminders-section { border-top: 1px solid #e5e6dc; padding-top: 25px; }
+.owner-reminder-card { display: grid; gap: 8px; }
+.owner-reminder-card h3 { margin: 0; color: #1d4939; font: 700 18px 'Manrope', sans-serif; }
+.reminder-created-at { margin: 0; color: #718477; font-size: 12px; }
+.owner-menu-dashboard-link { margin-bottom: 24px; }
+.owner-menu-form-card { margin-bottom: 32px; border: 1px solid #e5e6dc; border-radius: 16px; padding: clamp(18px, 3vw, 26px); background: #fffefa; }
+.owner-menu-form-card > h2 { margin: 0; color: #1d4939; font: 800 25px/1.2 'Manrope', sans-serif; letter-spacing: -1px; }
+.owner-menu-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 15px; margin-top: 18px; }
+.owner-menu-form .form-field { display: grid; min-width: 0; gap: 7px; color: #43584a; font-size: 13px; font-weight: 700; }
+.owner-menu-form input, .owner-menu-form textarea { width: 100%; min-width: 0; border: 1px solid #dce3d9; border-radius: 8px; padding: 11px 12px; color: #1d3028; background: #fff; font: inherit; font-size: 14px; }
+.owner-menu-form textarea { resize: vertical; }
+.owner-menu-form input:focus, .owner-menu-form textarea:focus { outline: 3px solid #d8eadb; border-color: #638a6c; }
+.owner-menu-wide-field, .owner-menu-form-message, .owner-menu-success, .owner-menu-form-actions { grid-column: 1 / -1; }
+.owner-menu-field-error { color: #8d3028; font-size: 12px; font-weight: 500; }
+.owner-menu-success { color: #276447; background: #f2f8ef; }
+.owner-menu-form-actions, .owner-menu-item-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.owner-menu-list { border-top: 1px solid #e5e6dc; padding-top: 25px; }
+.owner-menu-items { display: grid; gap: 12px; }
+.owner-menu-item { display: flex; align-items: center; justify-content: space-between; gap: 18px; border: 1px solid #e5e6dc; border-radius: 13px; padding: 17px; background: #fffefa; }
+.owner-menu-item-copy { min-width: 0; flex: 1; }
+.owner-menu-item-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.owner-menu-item-heading .card-kicker { margin-bottom: 5px; }
+.owner-menu-item h3 { margin: 0; color: #1d4939; font: 700 18px/1.3 'Manrope', sans-serif; overflow-wrap: anywhere; }
+.owner-menu-availability { flex: 0 0 auto; border-radius: 99px; padding: 6px 9px; color: #276447; background: #edf5eb; font-size: 11px; font-weight: 700; }
+.owner-menu-availability.is-unavailable { color: #8d4933; background: #fff1e7; }
+.owner-menu-item .card-description { margin-top: 7px; }
+.owner-menu-item-meta { margin: 8px 0 0; color: #276447; font-size: 13px; font-weight: 700; }
+.owner-menu-item-meta span { color: #718477; font-weight: 400; }
+.owner-menu-item-actions { justify-content: flex-end; flex: 0 0 auto; }
 .order-insights-page > .cart-title { font-size: clamp(36px, 6vw, 58px); }
 .insights-intro { max-width: 720px; margin: 14px 0 24px; color: #6e7d73; line-height: 1.7; }
 .order-insights-card { margin-top: 18px; border: 1px solid #e5e6dc; border-radius: 16px; padding: clamp(18px, 3vw, 28px); background: #fffefa; box-shadow: 0 10px 30px #2b443008; }
@@ -332,6 +361,10 @@ footer span { margin-left: 5px; color: #e47743; }
   .sales-metric { align-items: flex-start; flex-direction: column; }
   .order-detail-header { align-items: flex-start; flex-direction: column; }
   .order-list-card, .order-detail-card, .order-timeline-section { padding: 17px; }
+  .owner-menu-form { grid-template-columns: 1fr; }
+  .owner-menu-item { align-items: flex-start; flex-direction: column; }
+  .owner-menu-item-actions { width: 100%; justify-content: flex-start; }
+  .owner-menu-item-actions button { flex: 1; }
   .dialog-actions { flex-direction: column-reverse; }
   .dialog-actions button { width: 100%; }
 }

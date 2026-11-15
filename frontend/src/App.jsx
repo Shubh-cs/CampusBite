@@ -1,7 +1,6 @@
 import { Link, Navigate, Route, Routes } from 'react-router-dom';
 import { roleHomePath } from './auth/roles.js';
 import { useAuth } from './context/AuthContext.jsx';
-import { AccountPage } from './pages/AccountPage.jsx';
 import { LoginPage } from './pages/LoginPage.jsx';
 import { RegisterPage } from './pages/RegisterPage.jsx';
 import { CartPage } from './pages/CartPage.jsx';
@@ -11,6 +10,7 @@ import { CustomerOrdersPage } from './pages/CustomerOrdersPage.jsx';
 import { CustomerOrderDetailPage } from './pages/CustomerOrderDetailPage.jsx';
 import { CustomerOrderInsightsPage } from './pages/CustomerOrderInsightsPage.jsx';
 import { OwnerDashboardPage } from './pages/OwnerDashboardPage.jsx';
+import { OwnerMenuPage } from './pages/OwnerMenuPage.jsx';
 import { OwnerOrderDetailPage } from './pages/OwnerOrderDetailPage.jsx';
 import { DeliveryOrdersPage } from './pages/DeliveryOrdersPage.jsx';
 import { DeliveryOrderDetailPage } from './pages/DeliveryOrderDetailPage.jsx';
@@ -35,7 +35,7 @@ function SiteHeader() {
         {user ? (
           <>
             {user.role === 'CUSTOMER' && <>
-              <Link className="text-button" to="/orders">My orders</Link>
+              <Link className="text-button" to="/orders">Customer dashboard</Link>
               <Link className="text-button" to="/order-insights">Order insights</Link>
             </>}
             {user.role === 'OWNER' && <Link className="text-button" to="/account/owner">Owner dashboard</Link>}
@@ -107,8 +107,9 @@ export default function App() {
         <Route path="/order-insights" element={<ProtectedRoute allowedRoles={["CUSTOMER"]}><CustomerOrderInsightsPage /></ProtectedRoute>} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
-        <Route path="/account/customer" element={<ProtectedRoute allowedRoles={["CUSTOMER"]}><AccountPage /></ProtectedRoute>} />
+        <Route path="/account/customer" element={<ProtectedRoute allowedRoles={["CUSTOMER"]}><Navigate to="/orders" replace /></ProtectedRoute>} />
         <Route path="/account/owner" element={<ProtectedRoute allowedRoles={["OWNER"]}><OwnerDashboardPage /></ProtectedRoute>} />
+        <Route path="/owner/menu" element={<ProtectedRoute allowedRoles={["OWNER"]}><OwnerMenuPage /></ProtectedRoute>} />
         <Route path="/owner/orders/:orderId" element={<ProtectedRoute allowedRoles={["OWNER"]}><OwnerOrderDetailPage /></ProtectedRoute>} />
         <Route path="/account/delivery-partner" element={<ProtectedRoute allowedRoles={["DELIVERY_PARTNER"]}><DeliveryOrdersPage /></ProtectedRoute>} />
         <Route path="/delivery/orders/:orderId" element={<ProtectedRoute allowedRoles={["DELIVERY_PARTNER"]}><DeliveryOrderDetailPage /></ProtectedRoute>} />

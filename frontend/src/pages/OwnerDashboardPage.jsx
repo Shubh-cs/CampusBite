@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { fetchOwnerOrders, fetchAllOwnerOrders, fetchOwnerRestaurant } from '../api/ownerOrders.js';
 import { Pagination } from '../components/Pagination.jsx';
 import { OwnerRefundRequests } from '../components/OwnerRefundRequests.jsx';
+import { OwnerReminders } from '../components/OwnerReminders.jsx';
 import { formatINR } from '../context/CartContext.jsx';
 
 const PAGE_SIZE = 10;
@@ -80,6 +81,7 @@ export function OwnerDashboardPage() {
     <main className="discovery-page role-dashboard">
       <p className="eyebrow">Restaurant workspace</p>
       <h1 className="cart-title">{restaurant?.name || 'Owner dashboard'}</h1>
+      <Link className="form-submit owner-menu-dashboard-link" to="/owner/menu">Manage menu</Link>
       {error && <section className="state-panel state-panel--error" role="alert"><p>{error}</p><button className="secondary-button" type="button" onClick={() => setRetryKey((key) => key + 1)}>Retry</button></section>}
       {!error && (
         <>
@@ -117,6 +119,7 @@ export function OwnerDashboardPage() {
           <OwnerRefundRequests onUpdated={loadDashboard} />
         </>
       )}
+      <OwnerReminders />
     </main>
   );
 }
